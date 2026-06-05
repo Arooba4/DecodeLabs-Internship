@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DecoBot — Rule-Based AI Chatbot | DecodeLabs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-deep:      #080c10;
+    --bg-mid:       #0d1117;
+    --bg-surface:   #111820;
+    --bg-card:      #141c24;
+    --border:       rgba(29, 158, 117, 0.18);
+    --border-hi:    rgba(29, 158, 117, 0.45);
+    --teal:         #1d9e75;
+    --teal-bright:  #23c791;
+    --teal-dim:     #0f6e56;
+    --teal-glow:    rgba(29, 158, 117, 0.12);
+    --amber:        #ef9f27;
+    --red:          #e24b4a;
+    --text-primary: #e8ede8;
+    --text-muted:   #6a8070;
+    --text-dim:     #3d5046;
+    --mono:         'JetBrains Mono', monospace;
+    --sans:         'Space Grotesk', sans-serif;
+    --radius:       10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    overflow-x: hidden;
+  }
+
+  /* subtle grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(29,158,117,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(29,158,117,.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── TOP BRAND BAR ── */
+  .brand-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: var(--bg-surface);
+  }
+  .brand-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-r { background: #e24b4a; }
+  .dot-y { background: #ef9f27; }
+  .dot-g { background: #1d9e75; }
+  .brand-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: .08em;
+  }
+  .brand-title span { color: var(--teal-bright); }
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border-hi);
+    color: var(--teal);
+    letter-spacing: .06em;
+  }
+
+  /* ── MAIN CHAT WINDOW ── */
+  .chat-window {
+    background: var(--bg-mid);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    overflow-x: auto;
+  }
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    letter-spacing: .04em;
+  }
+  .status-item .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .pulse { background: var(--teal-bright); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .static-amber { background: var(--amber); }
+  .static-teal  { background: var(--teal); }
+
+  /* BOT HEADER */
+  .bot-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bot-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .bot-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--teal-glow);
+    border: 1px solid var(--border-hi);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .online-ring {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--teal-bright);
+    border: 2px solid var(--bg-mid);
+  }
+  .bot-info h1 {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: .05em;
+  }
+  .bot-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+  .engine-tags {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+  .etag {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: .06em;
+    border: 1px solid;
+  }
+  .etag-loop  { color: var(--teal);  border-color: var(--teal-dim);  background: rgba(29,158,117,.08); }
+  .etag-dict  { color: var(--amber); border-color: rgba(239,159,39,.3); background: rgba(239,159,39,.07); }
+  .etag-ipo   { color: #85b7eb;      border-color: rgba(133,183,235,.3); background: rgba(133,183,235,.07); }
+
+  /* MESSAGES */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 380px;
+    max-height: 420px;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--teal-dim); border-radius: 4px; }
+
+  .msg-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    animation: fadeUp .25s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .mini-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .mini-avatar.bot { background: var(--teal-glow); border-color: var(--border-hi); }
+  .mini-avatar.usr { background: var(--bg-surface); }
+
+  .bubble {
+    max-width: 72%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .bubble.bot {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px 12px 12px 12px;
+    font-family: var(--sans);
+  }
+  .bubble.user {
+    background: var(--teal-dim);
+    border: 1px solid var(--border-hi);
+    color: #e1f5ee;
+    border-radius: 12px 4px 12px 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  /* code-style bot label */
+  .bot-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--teal);
+    letter-spacing: .08em;
+    margin-bottom: 3px;
+  }
+  .user-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: .08em;
+    margin-bottom: 3px;
+    text-align: right;
+  }
+
+  /* thinking dots */
+  .typing-bubble {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 12px 16px;
+  }
+  .typing-bubble span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: blink 1.2s infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: .2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+  /* ── QUICK CHIPS ── */
+  .chips-bar {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: var(--bg-surface);
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .04em;
+  }
+  .chip:hover {
+    border-color: var(--teal);
+    color: var(--teal-bright);
+    background: var(--teal-glow);
+  }
+  .chips-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: .08em;
+    align-self: center;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+
+  /* ── INPUT AREA ── */
+  .input-area {
+    padding: 14px 18px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--bg-surface);
+  }
+  .prompt-sign {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--teal);
+    flex-shrink: 0;
+    user-select: none;
+  }
+  #chat-input {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color .2s;
+    caret-color: var(--teal-bright);
+  }
+  #chat-input::placeholder { color: var(--text-dim); }
+  #chat-input:focus { border-color: var(--border-hi); }
+  #send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border-hi);
+    background: var(--teal-dim);
+    color: #e1f5ee;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background .15s, transform .1s;
+    flex-shrink: 0;
+  }
+  #send-btn:hover { background: var(--teal); }
+  #send-btn:active { transform: scale(.94); }
+  #send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: var(--bg-surface);
+  }
+  .bottom-bar-left {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: .06em;
+  }
+  .bottom-bar-left span { color: var(--teal); }
+  .bottom-bar-right {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: .06em;
+  }
+
+  /* ── IPO LEGEND ── */
+  .ipo-strip {
+    display: flex;
+    gap: 0;
+    margin-top: 18px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .ipo-block {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .ipo-block:last-child { border-right: none; }
+  .ipo-block::after {
+    content: '→';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    z-index: 1;
+  }
+  .ipo-block:last-child::after { display: none; }
+  .ipo-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .1em;
+    margin-bottom: 3px;
+  }
+  .ipo-label.i { color: #85b7eb; }
+  .ipo-label.p { color: var(--amber); }
+  .ipo-label.o { color: var(--teal); }
+  .ipo-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    line-height: 1.5;
+  }
+
+  /* ended state */
+  .ended-notice {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--red);
+    padding: 8px;
+    letter-spacing: .06em;
+    border-top: 1px solid rgba(226,75,74,.2);
+    margin-top: 4px;
+    background: rgba(226,75,74,.05);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- brand bar -->
+  <div class="brand-bar">
+    <div class="brand-left">
+      <div class="brand-dot dot-r"></div>
+      <div class="brand-dot dot-y"></div>
+      <div class="brand-dot dot-g"></div>
+      <span class="brand-title">decobot<span>_v1.0</span>.py &nbsp;|&nbsp; DecodeLabs · Batch 2026</span>
+    </div>
+    <span class="badge">PROJECT 01</span>
+  </div>
+
+  <!-- chat window -->
+  <div class="chat-window">
+
+    <!-- status bar -->
+    <div class="status-bar">
+      <div class="status-item"><div class="dot pulse"></div>WHILE LOOP: RUNNING</div>
+      <div class="status-item"><div class="dot static-amber"></div>ENGINE: RULE-BASED</div>
+      <div class="status-item"><div class="dot static-teal"></div>LOOKUP: dict.get() O(1)</div>
+      <div class="status-item" id="msg-counter"><div class="dot static-teal"></div>MSGS: 0</div>
+    </div>
+
+    <!-- bot header -->
+    <div class="bot-header">
+      <div class="bot-avatar-wrap">
+        <div class="bot-avatar">🤖</div>
+        <div class="online-ring"></div>
+      </div>
+      <div class="bot-info">
+        <h1>DecoBot</h1>
+        <p>Rule-Based AI Chatbot &nbsp;·&nbsp; IPO Architecture</p>
+        <div class="engine-tags">
+          <span class="etag etag-loop">while True</span>
+          <span class="etag etag-dict">dict O(1)</span>
+          <span class="etag etag-ipo">IPO Model</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- messages -->
+    <div class="messages" id="messages"></div>
+
+    <!-- chips -->
+    <div class="chips-bar">
+      <span class="chips-label">QUICK INPUT →</span>
+      <button class="chip" onclick="sendChip('hello')">hello</button>
+      <button class="chip" onclick="sendChip('what is ai')">what is ai</button>
+      <button class="chip" onclick="sendChip('what is python')">what is python</button>
+      <button class="chip" onclick="sendChip('project 1')">project 1</button>
+      <button class="chip" onclick="sendChip('ipo model')">ipo model</button>
+      <button class="chip" onclick="sendChip('how are you')">how are you</button>
+      <button class="chip" onclick="sendChip('help')">help</button>
+      <button class="chip" onclick="sendChip('exit')" style="color:#e24b4a;border-color:rgba(226,75,74,.3)">exit</button>
+    </div>
+
+    <!-- input -->
+    <div class="input-area">
+      <span class="prompt-sign">&gt;_</span>
+      <input
+        type="text"
+        id="chat-input"
+        placeholder="Type your message... (Enter to send)"
+        autocomplete="off"
+        autofocus
+      />
+      <button id="send-btn" onclick="handleSend()" title="Send">&#10148;</button>
+    </div>
+
+  </div>
+
+  <!-- bottom bar -->
+  <div class="bottom-bar">
+    <span class="bottom-bar-left">LOOP STATUS: <span id="loop-status">ACTIVE</span></span>
+    <span class="bottom-bar-right">type "exit" or "quit" to terminate session</span>
+  </div>
+
+  <!-- IPO strip -->
+  <div class="ipo-strip">
+    <div class="ipo-block">
+      <div class="ipo-label i">INPUT</div>
+      <div class="ipo-desc">raw_input.lower().strip()</div>
+    </div>
+    <div class="ipo-block">
+      <div class="ipo-label p">PROCESS</div>
+      <div class="ipo-desc">responses.get(key, fallback)</div>
+    </div>
+    <div class="ipo-block">
+      <div class="ipo-label o">OUTPUT</div>
+      <div class="ipo-desc">print reply → loop back</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  KNOWLEDGE BASE — Dictionary O(1) lookups
+// ─────────────────────────────────────────────
+const RESPONSES = {
+  "hello":            "Hello! I'm DecoBot, your rule-based AI assistant. How can I help you today?",
+  "hi":               "Hey! Great to see you. Ask me anything about AI, Python, or this project.",
+  "hey":              "Hey there! I'm running on pure if-else logic. What's on your mind?",
+  "thanks":           "You're welcome! Anything else I can assist with?",
+  "thank you":        "My pleasure! Happy to help.",
+  "help":             "I can answer questions on: AI, Python, this project, DecodeLabs, the IPO model, dictionaries, and loops. Try asking!",
+  "what is ai":       "AI (Artificial Intelligence) is the simulation of human intelligence by machines. Rule-based AI — like me — uses explicit logic rules. More advanced AI uses machine learning and neural networks.",
+  "what is python":   "Python is a high-level, readable programming language. It's the #1 choice for AI/ML because of libraries like NumPy, Pandas, TensorFlow, and PyTorch.",
+  "python":           "Python is great for AI! Its clean syntax and powerful libraries (NumPy, Pandas, scikit-learn, TensorFlow) make it the standard language in the field.",
+  "project 1":        "Project 1 specs: ① while True input loop ② input sanitization (lower + strip) ③ dictionary knowledge base with 5+ intents ④ fallback for unknowns ⑤ clean exit command. You're looking at a finished version!",
+  "project":          "This is DecodeLabs Project 1 — a Rule-Based AI Chatbot. It teaches control flow, decision logic, and basic AI concepts through hands-on building.",
+  "decodelabs":       "DecodeLabs is an AI training organization based in Greater Lucknow, India. They train students through real-world projects to build industry-ready AI portfolios.",
+  "ipo model":        "IPO = Input → Process → Output. Input: sanitize raw text. Process: match intent via dictionary. Output: return response and loop. It's the foundational blueprint for all controlled AI systems.",
+  "dictionary":       "A Python dictionary stores key-value pairs. dict.get(key, default) does an O(1) constant-time lookup — far faster and cleaner than a long if-elif chain that runs in O(n).",
+  "how are you":      "I'm a deterministic program — no feelings, but all systems are nominal! The while loop is running and the dict is ready.",
+  "who are you":      "I'm DecoBot v1.0, a rule-based chatbot built for DecodeLabs Project 1. I use a Python dictionary for O(1) intent matching instead of slow if-elif ladders.",
+  "what is ipo":      "IPO stands for Input-Process-Output. It's the core architecture model: raw user input → sanitize → match intent → generate response → loop back.",
+  "loop":             "The 'while True:' loop is the chatbot's heartbeat. It continuously waits for input, processes it, and responds — until a kill command (exit/quit) breaks the cycle.",
+  "sanitize":         "Sanitization = raw_input.lower().strip(). This converts 'Hello  ', 'HELLO', 'hElLo' all into 'hello' so the dictionary lookup always succeeds reliably.",
+  "exit command":     "The exit strategy uses a set of keywords: {'exit', 'quit', 'bye'}. When matched, the loop breaks cleanly — ending the session without an error.",
+  "o(1)":             "O(1) means constant time — the operation takes the same time regardless of how many rules exist. A dictionary lookup is O(1). An if-elif chain is O(n) — slower as rules grow.",
+  "if else":          "if-else chains (the anti-pattern) scan rules one by one — O(n) complexity, high maintenance debt. Dictionaries replace them with instant O(1) lookups. Always prefer dict over if-elif for rule matching!",
+  "neural network":   "Neural networks are the 'Artist' (probabilistic) side of AI — they learn from data. This project is the 'Engineer' (deterministic) side — explicit rules. You need both!",
+  "machine learning": "Machine learning lets AI learn from data automatically. This project is the foundation — before ML, you must master deterministic logic control.",
+  "batch 2026":       "Batch 2026 is DecodeLabs' current AI Industrial Training cohort. You're building real-world AI projects that will form your professional portfolio.",
+};
+
+const EXIT_CMDS = new Set(["exit", "quit", "bye", "goodbye"]);
+const FALLBACK = "⚠ No matching rule found. My knowledge base doesn't have that key yet. Try: hello, what is ai, python, project 1, ipo model, or help.";
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let sessionActive = true;
+let msgCount = 0;
+
+const messagesEl = document.getElementById("messages");
+const inputEl    = document.getElementById("chat-input");
+const sendBtn    = document.getElementById("send-btn");
+const counter    = document.getElementById("msg-counter");
+const loopStatus = document.getElementById("loop-status");
+
+// ─────────────────────────────────────────────
+//  RENDER HELPERS
+// ─────────────────────────────────────────────
+function appendMsg(text, role, isCode) {
+  const row = document.createElement("div");
+  row.className = `msg-row ${role}`;
+
+  const lbl = document.createElement("div");
+  lbl.className = role === "bot" ? "bot-label" : "user-label";
+  lbl.textContent = role === "bot" ? "DECOBOT_OUTPUT" : "USER_INPUT";
+
+  const avatar = document.createElement("div");
+  avatar.className = `mini-avatar ${role === "bot" ? "bot" : "usr"}`;
+  avatar.textContent = role === "bot" ? "🤖" : "👤";
+
+  const wrap = document.createElement("div");
+  wrap.style.display = "flex";
+  wrap.style.flexDirection = "column";
+  wrap.style.alignItems = role === "user" ? "flex-end" : "flex-start";
+  wrap.style.maxWidth = "73%";
+
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${role}`;
+  bubble.textContent = text;
+
+  wrap.appendChild(lbl);
+  wrap.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(wrap);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  msgCount++;
+  counter.innerHTML = `<div class="dot static-teal"></div>MSGS: ${msgCount}`;
+}
+
+function showTyping() {
+  const row = document.createElement("div");
+  row.className = "msg-row bot";
+  row.id = "typing-row";
+  const av = document.createElement("div");
+  av.className = "mini-avatar bot";
+  av.textContent = "🤖";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble bot typing-bubble";
+  bubble.innerHTML = "<span></span><span></span><span></span>";
+  row.appendChild(av);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return row;
+}
+
+function removeTyping() {
+  const el = document.getElementById("typing-row");
+  if (el) el.remove();
+}
+
+// ─────────────────────────────────────────────
+//  CORE LOGIC
+// ─────────────────────────────────────────────
+function processInput(raw) {
+  // PHASE 1: SANITIZATION
+  const clean = raw.toLowerCase().trim();
+  if (!clean) return;
+
+  appendMsg(raw, "user");
+
+  // EXIT STRATEGY
+  if (EXIT_CMDS.has(clean)) {
+    const t = showTyping();
+    setTimeout(() => {
+      removeTyping();
+      appendMsg("Session terminated. The while loop has broken. Goodbye! 👋", "bot");
+      sessionActive = false;
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+      loopStatus.textContent = "TERMINATED";
+      loopStatus.style.color = "#e24b4a";
+      // add ended notice
+      const note = document.createElement("div");
+      note.className = "ended-notice";
+      note.textContent = "[ LOOP BROKEN — REFRESH PAGE TO RESTART ]";
+      document.querySelector(".chat-window").appendChild(note);
+    }, 500);
+    return;
+  }
+
+  // PHASE 2: PROCESS — dict O(1) lookup
+  const t = showTyping();
+  setTimeout(() => {
+    removeTyping();
+    // PHASE 3: OUTPUT
+    const reply = RESPONSES[clean] !== undefined ? RESPONSES[clean] : FALLBACK;
+    appendMsg(reply, "bot");
+  }, 420 + Math.random() * 300);
+}
+
+// ─────────────────────────────────────────────
+//  EVENT HANDLERS
+// ─────────────────────────────────────────────
+function handleSend() {
+  if (!sessionActive) return;
+  const val = inputEl.value;
+  inputEl.value = "";
+  processInput(val);
+}
+
+function sendChip(text) {
+  if (!sessionActive) return;
+  inputEl.value = "";
+  processInput(text);
+}
+
+inputEl.addEventListener("keydown", e => {
+  if (e.key === "Enter") handleSend();
+});
+
+// ─────────────────────────────────────────────
+//  INIT — Welcome Message
+// ─────────────────────────────────────────────
+setTimeout(() => {
+  appendMsg(
+    "Hello! I'm DecoBot — a rule-based AI chatbot built on the IPO Model. I use Python dictionaries for O(1) intent matching. Ask me about AI, Python, this project, or type 'exit' to end the session.",
+    "bot"
+  );
+}, 300);
+</script>
+</body>
+</html>

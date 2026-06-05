@@ -4,9 +4,8 @@
 
 Overview
 
-DecoBot is a **rule-based AI chatbot** built in Python as part of DecodeLabs' AI Industrial Training Program. It simulates intelligent conversation using **explicit control flow and dictionary-based intent matching** — no machine learning involved.
-
-This project is the foundation of AI engineering: before building systems that *learn*, you must master systems that *think through rules*.
+DecoBot is a **rule-based AI chatbot** built in Python as part of DecodeLabs' AI Industrial Training Program. It simulates intelligent conversation using explicit control flow and dictionary-based intent matching** — no machine learning involved.
+This project is the foundation of AI engineering: before building systems that learn, you must master systems that think through rules.
 
 ---
 
@@ -86,13 +85,13 @@ if clean_input == "hello":
     reply = "Hello!"
 elif clean_input == "hi":
     reply = "Hey there!"
-# ... 20 more elifs
+... 20 more elifs
 
-# ✅ Professional — O(1) dictionary lookup
+ Professional — O(1) dictionary lookup
 reply = responses.get(clean_input, "I don't understand that yet.")
 ```
 
-### 5. Exit Strategy
+ 5. Exit Strategy
 ```python
 EXIT_COMMANDS = {"exit", "quit", "bye", "goodbye"}
 
@@ -197,15 +196,6 @@ Even in the era of ChatGPT and LLMs, rule-based systems are critical:
 - [ ] Add multi-turn context (remember previous messages)
 - [ ] Integrate with an LLM API as fallback (hybrid architecture)
 
----
-
-## 👨‍💻 Author
-
-Built as part of **DecodeLabs AI Industrial Training Kit — Batch 2026**
-
-- 🌐 [www.decodelabs.tech](http://www.decodelabs.tech)
-- 📧 decodelabs.tech@gmail.com
-- 📍 Greater Lucknow, India
 
 ---
 
